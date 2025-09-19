@@ -1,21 +1,24 @@
+using Microsoft.EntityFrameworkCore;
 using MyTasks.Core.Interfaces;
+using MyTasks.Infrastructure;
 using MyTasks.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// ✅ 注册 DbContext（使用 SQLite）
+var connectionString = builder.Configuration.GetConnectionString("Sqlite") ?? "Data Source=tasks.db";
+builder.Services.AddDbContext<TasksDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+// 注册 Repository（Scoped）
+builder.Services.AddScoped<ITaskRepository, EfTaskRepository>();
+
 builder.Services.AddControllers();
-
-// ✅ 注册依赖（接口 → 实现）
-builder.Services.AddSingleton<ITaskRepository, InMemoryTaskRepository>();
-
-// ✅ 加 Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// ✅ 启用 Swagger（仅开发环境）
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -25,5 +28,4 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
