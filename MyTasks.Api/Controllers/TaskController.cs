@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using MyTasks.Api.Models;
 using MyTasks.Core.Entities;
 using MyTasks.Core.Interfaces;
 
@@ -34,27 +35,39 @@ public class TaskController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<ActionResult<TaskItem>> CreateAsync(TaskItem task)
+    public async Task<ActionResult<TaskItem>> Create(CreateTaskDto dto)
     {
+        var task = new TaskItem
+        {
+            Title = dto.Title,
+            Description = dto.Description,
+            IsCompleted = dto.IsCompleted,
+            CreatedAt = DateTime.UtcNow // 系统生成
+            // Id 会自动生成，因为 TaskItem 的属性默认就是 Guid.NewGuid()
+        };
+
         await _repository.AddAsync(task);
         return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> UpdateAsync(Guid id, TaskItem task)
+    public async Task<IActionResult> Update(Guid id, UpdateTaskDto dto)
     {
-        var existingTask = await _repository.GetByIdAsync(id);
-        if (existingTask == null)
+        var task = await _repository.GetByIdAsync(id);
+        if (task == null)
         {
             return NotFound();
         }
 
-        // 确保任务的 Id 和路由参数一致
-        task.Id = id;
+        // 更新可修改的字段
+        task.Title = dto.Title;
+        task.Description = dto.Description;
+        task.IsCompleted = dto.IsCompleted;
 
         await _repository.UpdateAsync(task);
-        return NoContent(); // 204 状态码，表示成功但无返回内容
+        return NoContent(); // 204 成功但没有返回体
     }
+
     /*public async Task<ActionResult> UpdateAsync(Guid id,TaskItem task)
     {
         var task1 = await _repository.GetByIdAsync(id);
