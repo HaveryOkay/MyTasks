@@ -40,10 +40,24 @@ public class TaskController : ControllerBase
         return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
     }
 
-    [HttpPut]
-    public async Task<ActionResult<TaskItem>> UpdateAsync(Guid id,TaskItem task)
+    [HttpPut("{id}")]
+    public async Task<IActionResult> UpdateAsync(Guid id, TaskItem task)
     {
-        var task1 = _repository.GetByIdAsync(id);
+        var existingTask = await _repository.GetByIdAsync(id);
+        if (existingTask == null)
+        {
+            return NotFound();
+        }
+
+        // 确保任务的 Id 和路由参数一致
+        task.Id = id;
+
+        await _repository.UpdateAsync(task);
+        return NoContent(); // 204 状态码，表示成功但无返回内容
+    }
+    /*public async Task<ActionResult> UpdateAsync(Guid id,TaskItem task)
+    {
+        var task1 = await _repository.GetByIdAsync(id);
         if (task1 == null)
         {
             return NotFound();
@@ -52,7 +66,17 @@ public class TaskController : ControllerBase
         {
             await _repository.UpdateAsync(task);
         }
-
+        return NoContent();
+    }*/
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> DeleteAsync(Guid id)
+    {
+        var task = await _repository.GetByIdAsync(id);
+        if (task == null)
+        {
+            return NotFound();
+        }
+        await _repository.DeleteAsync(id);
         return NoContent();
     }
 }
